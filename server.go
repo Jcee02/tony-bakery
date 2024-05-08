@@ -9,6 +9,7 @@ import (
   _ "github.com/lib/pq"
 
   "github.com/gofiber/fiber/v2"
+  "github.com/gofiber/template/html/v2"
 )
 
 
@@ -16,41 +17,79 @@ import (
 
 //App listen starts HTTP server that is listening on port 3000, we call "Fatalln()" to log output to the console if any error occur.
 func main() {
+  connStr := "postgresql://jc:gopher@localhost/todos?sslmode=disable"
 
-  db, err :=c
-
-  app := fiber.New()
+  db, err := sql.Open("postgres", connStr)
+  if err != nil {
+    log.Fatal(err)
+  }
+  
+  engine := html.New("./views", ".html")
+  app := fiber.New(fiber.Config{
+    Views: engine,
+  })
 
   //Methods to handle CRUD operations
 
-  app.Get("/", indexHandler)
+  app.Get("/", func(c *fiber.Ctx) error {
+    return indexHandler(c, db)
+  }) 
 
-  app.Post("/", postHandler)
+  app.Post("/",  func(c *fiber.Ctx) error {
+    return indexHandler(c, db)
+  })
 
-  app.Put("/update", putHandler)
+  app.Put("/update", func(c *fiber.Ctx) error {
+    return indexHandler(c, db)
+  })
   
-  app.Delete("/delete", deleteHandler)
+  app.Delete("/delete", func(c *fiber.Ctx) error {
+    return indexHandler(c, db)
+  })
 
   port := os.Getenv("PORT")
   if port == "" {
     port = "3000"
   }
-
+  app.Static("/", "./public")
   log.Fatalln(app.Listen(fmt.Sprintf(":%v", port)))
 }
 
-func indexHandler(c *fiber.Ctx) error {
+func indexHandler(c *fiber.Ctx, db *sql.DB) error {
+  var res string
+  var todos []string
+  
+  //We use db object to execute an SQL query on databasewoth Query() func 
+
+  //This returns all the rows that match the query (string passed to Query())
+
+  rows, err := db.Query("SELECT * FROM todos")
+
+  // defer always a good idea to prevent futher enum
+  
+  defer rows.Close()
+  if err != nil {
+    log.Fatalln(err)
+    c.JSON("An error ocurred")
+  }
+
+  for rows.Next() {
+    rows.Scan(&res)
+    todos = append(todos, res)
+  }
+  return c.Render("index", fiber.Map{
+    "Todos": todos,
+  })
+}
+
+func postHandler(c *fiber.Ctx, db *sql.DB) error {
   return c.SendString("prueba")
 }
 
-func postHandler(c *fiber.Ctx) error {
+func putHandler(c *fiber.Ctx, db *sql.DB) error {
   return c.SendString("prueba")
 }
 
-func putHandler(c *fiber.Ctx) error {
-  return c.SendString("prueba")
-}
-
-func deleteHandler(c *fiber.Ctx) error {
+func deleteHandler(c *fiber.Ctx, db *sql.DB) error {
   return c.SendString("Hello")
 }
