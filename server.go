@@ -13,6 +13,10 @@ import (
 )
 
 
+type todo struct {
+  Item string
+}
+
 //creating a new "fiber" object with "fiber.New" and assigning it to the app variable, then assign port environment var to 3000
 
 //App listen starts HTTP server that is listening on port 3000, we call "Fatalln()" to log output to the console if any error occur.
@@ -83,13 +87,32 @@ func indexHandler(c *fiber.Ctx, db *sql.DB) error {
 }
 
 func postHandler(c *fiber.Ctx, db *sql.DB) error {
-  return c.SendString("prueba")
+  new_todo := todo{}
+  if err := c.BodyParser(&new_todo); err != nil {
+    log.Printf("An error occured: %v")
+    return c.SendString(err.Error())
+  }
+
+  fmt.Printf("%v", new_todo)
+  if new_todo.Item != "" {
+    _, err := db.Exec("INSERT into todo VALUES ($1)", new_todo.Item)
+    if err != nil {
+      log.Fatalf("An error occured while executing query: %v", err)
+    }
+  }
+
+  return c.Redirect("/")
 }
 
 func putHandler(c *fiber.Ctx, db *sql.DB) error {
-  return c.SendString("prueba")
+  old_item := c.Query("olditem")
+  new_item := c.Query("newitem")
+  db.Exec("UPDATE todos SET item=$1 WHERE item=$2", new_item, old_item)
+  return c.Redirect("/")
 }
 
 func deleteHandler(c *fiber.Ctx, db *sql.DB) error {
-  return c.SendString("Hello")
+  todo_to_delete := c.Query("item")
+  db.Exec("DELETE from todos WHERE item=$1", todo_to_delete)
+  return c.SendString("deleted")
 }
