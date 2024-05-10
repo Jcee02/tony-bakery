@@ -13,9 +13,7 @@ import (
 )
 
 
-type todo struct {
-  Item string
-}
+
 
 //creating a new "fiber" object with "fiber.New" and assigning it to the app variable, then assign port environment var to 3000
 
@@ -40,15 +38,15 @@ func main() {
   }) 
 
   app.Post("/",  func(c *fiber.Ctx) error {
-    return indexHandler(c, db)
+    return postHandler(c, db)
   })
 
   app.Put("/update", func(c *fiber.Ctx) error {
-    return indexHandler(c, db)
+    return putHandler(c, db)
   })
   
   app.Delete("/delete", func(c *fiber.Ctx) error {
-    return indexHandler(c, db)
+    return deleteHandler(c, db)
   })
 
   port := os.Getenv("PORT")
@@ -86,16 +84,20 @@ func indexHandler(c *fiber.Ctx, db *sql.DB) error {
   })
 }
 
+type todo struct {
+  Item string
+}
+
 func postHandler(c *fiber.Ctx, db *sql.DB) error {
   new_todo := todo{}
   if err := c.BodyParser(&new_todo); err != nil {
-    log.Printf("An error occured: %v")
+    log.Printf("An error occured: %v", err)
     return c.SendString(err.Error())
   }
 
   fmt.Printf("%v", new_todo)
   if new_todo.Item != "" {
-    _, err := db.Exec("INSERT into todo VALUES ($1)", new_todo.Item)
+    _, err := db.Exec("INSERT into todos VALUES ($1)", new_todo.Item)
     if err != nil {
       log.Fatalf("An error occured while executing query: %v", err)
     }
