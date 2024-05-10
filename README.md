@@ -3,13 +3,13 @@
 Software stack:
 
 - Frontend:
-  JavaScript
-  HTML
+  JavaScript,
+  HTML,
   CSS
 
 - Backend:
-  Go/Golang
-  Fiber web framework
+  Go/Golang,
+  Fiber web framework,
   pq SQL driver
 
 - Database:
